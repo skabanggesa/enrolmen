@@ -2,609 +2,499 @@
 <html lang="ms">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Borang Biodata Staf - SK Abang Gesa</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <title>Dashboard Analisis Murid & Kebajikan</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #1E90FF;
-            color: white;
-            margin: 0;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-            color: #333;
-        }
-        
-        .header {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        .logo-title-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .logo {
-            width: 80px;
-            height: auto;
-            margin-right: 15px;
-        }
-        
-        .logo img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-        
-        .title-container {
-            text-align: center;
-        }
-        
-        h1 {
-            margin: 0;
-            color: #1E3A8A;
-            font-size: 24px;
-        }
-        
-        h2 {
-            margin: 5px 0 0 0;
-            color: #1E3A8A;
-            font-size: 18px;
-        }
-        
-        hr {
-            border: none;
-            height: 2px;
-            background-color: #1E3A8A;
-            margin: 10px auto 20px;
-            width: 80%;
-        }
-        
-        .form-group {
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        
-        input[type="text"],
-        input[type="email"],
-        input[type="date"],
-        select,
-        textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-            text-align: center;
-        }
-        
-        .readonly-field {
-            background-color: #f5f5f5;
-            border: 1px solid #ddd;
-            padding: 8px;
-            border-radius: 4px;
-            width: 100%;
-            box-sizing: border-box;
-            text-align: center;
-        }
-        
-        .photo-upload {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-        }
-        
-        .photo-preview {
-            width: 100px;
-            height: 120px;
-            background-color: #eee;
-            margin: 0 auto 10px;
-            border: 1px dashed #ccc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-        
-        .photo-preview img {
-            max-width: 100%;
-            max-height: 100%;
-        }
-        
-        .button-group {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 30px;
-        }
-        
-        button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 16px;
-        }
-        
-        .lihat-btn {
-            background-color: #4CAF50;
-            color: white;
-        }
-        
-        .hantar-btn {
-            background-color: #25D366;
-            color: white;
-        }
-        
-        .service-history {
-            margin-top: 20px;
-            text-align: left;
-        }
-        
-        .service-history table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .service-history th, .service-history td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        
-        .service-history th {
-            background-color: #f2f2f2;
-        }
-        
-        .add-row {
-            margin: 10px auto 0;
-            background-color: #1E90FF;
-            color: white;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            display: block;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .dark-header { background-color: #1e293b; color: #ffffff; }
+        .kpi-card { transition: transform 0.2s; }
+        .kpi-card:hover { transform: translateY(-3px); }
+        .modal-bg { background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logo-title-container">
-                <div class="logo">
-                    <img src="logo.png" alt="Logo SK Abang Gesa">
-                </div>
-                <div class="title-container">
-                    <h1>BORANG BIODATA STAF</h1>
-                    <h2>SK ABANG GESA</h2>
-                </div>
-            </div>
-            <hr>
+<body class="bg-slate-50 min-h-screen pb-12">
+
+    <!-- HEADER -->
+    <header class="dark-header py-8 px-4 text-center border-b-4 border-amber-500 shadow-md">
+        <div class="max-w-7xl mx-auto">
+            <h1 class="text-2xl md:text-3xl font-bold tracking-wide uppercase text-amber-400">Pangkalan Data Murid & Kebajikan (HEM)</h1>
+            <p class="text-slate-300 text-sm mt-2">Sistem Web App Terkumpul (Google Apps Script Cloud)</p>
         </div>
-        
-        <form id="biodataForm">
-            <div class="form-group">
-                <label for="gambar">GAMBAR</label>
-                <div class="photo-upload">
-                    <div class="photo-preview" id="photoPreview">
-                        <span>Pratonton Gambar</span>
-                    </div>
-                    <input type="file" id="gambar" accept="image/*">
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 mt-8 space-y-8">
+
+        <!-- KAWALAN DATA -->
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-cloud text-amber-500"></i> Pangkalan Data Google Sheet
+                </h2>
+                <p class="text-xs text-slate-500" id="statusText">Menghubungkan ke Google Sheet...</p>
+            </div>
+            <div class="flex gap-2">
+                <label class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-4 py-2 rounded-lg transition flex items-center gap-2 border text-xs">
+                    <i class="fa-solid fa-file-excel text-emerald-600"></i> Muat Naik Excel (Pukal)
+                    <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="hidden">
+                </label>
+                <button onclick="loadFromGoogleSheet()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-lg text-xs transition flex items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-rotate"></i> Muat Semula Data
+                </button>
+            </div>
+        </section>
+
+        <!-- KPI UTAMA -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4" id="kpiSection">
+            <div class="kpi-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-blue-500">
+                <p class="text-xs text-slate-500 uppercase font-bold">Enrolmen & Jantina</p>
+                <h3 class="text-2xl font-extrabold text-slate-800 mt-1" id="kpiTotal">0</h3>
+                <p class="text-xs font-semibold mt-1 text-slate-600"><span class="text-blue-600" id="kpiLelaki">0 L</span> / <span class="text-pink-500" id="kpiPerempuan">0 P</span></p>
+            </div>
+            <div class="kpi-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-amber-500">
+                <p class="text-xs text-slate-500 uppercase font-bold">Penerima RMT</p>
+                <h3 class="text-2xl font-extrabold text-amber-600 mt-1" id="kpiRMT">0</h3>
+                <p class="text-xs font-semibold mt-1 text-slate-600"><span class="text-blue-600" id="kpiRMTL">0 L</span> / <span class="text-pink-500" id="kpiRMTP">0 P</span></p>
+            </div>
+            <div class="kpi-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-emerald-500">
+                <p class="text-xs text-slate-500 uppercase font-bold">Penerima BAP</p>
+                <h3 class="text-2xl font-extrabold text-emerald-600 mt-1" id="kpiBAP">0</h3>
+                <p class="text-xs text-slate-400 mt-1">Bantuan Awal Persekolahan</p>
+            </div>
+            <div class="kpi-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-cyan-500">
+                <p class="text-xs text-slate-500 uppercase font-bold">Penerima KWAPM</p>
+                <h3 class="text-2xl font-extrabold text-cyan-600 mt-1" id="kpiKWAPM">0</h3>
+                <p class="text-xs text-slate-400 mt-1">KWAPM</p>
+            </div>
+            <div class="kpi-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-indigo-500">
+                <p class="text-xs text-slate-500 uppercase font-bold">Analisis Agama</p>
+                <h3 class="text-xl font-bold text-slate-800 mt-1" id="kpiAgama">Islam: 0</h3>
+                <p class="text-xs text-slate-500 mt-1" id="kpiBukanIslam">Bukan Islam: 0</p>
+            </div>
+            <div class="kpi-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-orange-500">
+                <p class="text-xs text-slate-500 uppercase font-bold">Bangsa Majoriti</p>
+                <h3 class="text-xl font-bold text-slate-800 mt-1" id="kpiMajoriti">Tiada Data</h3>
+                <p class="text-xs text-slate-400 mt-1">Pecahan di carta</p>
+            </div>
+            <div class="kpi-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-rose-500">
+                <p class="text-xs text-slate-500 uppercase font-bold">Kategori Asnaf</p>
+                <h3 class="text-2xl font-extrabold text-rose-600 mt-1" id="kpiAsnaf">0</h3>
+                <p class="text-xs text-slate-400 mt-1">Layak Terima Bantuan</p>
+            </div>
+            <div class="kpi-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-purple-500">
+                <p class="text-xs text-slate-500 uppercase font-bold">Murid OKU / PPKI</p>
+                <h3 class="text-2xl font-extrabold text-purple-600 mt-1" id="kpiOKU">0</h3>
+                <p class="text-xs text-slate-400 mt-1">Berdaftar JKM</p>
+            </div>
+        </section>
+
+        <!-- CARTA -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <h3 class="text-sm font-bold text-slate-800 mb-4"><i class="fa-solid fa-chart-pie text-orange-500"></i> Pecahan Bangsa</h3>
+                <div class="h-56 relative"><canvas id="chartBangsa"></canvas></div>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm lg:col-span-2">
+                <h3 class="text-sm font-bold text-slate-800 mb-4"><i class="fa-solid fa-hand-holding-heart text-amber-500"></i> Analisis Bantuan & Kebajikan</h3>
+                <div class="h-56 relative"><canvas id="chartBantuan"></canvas></div>
+            </div>
+        </section>
+
+        <!-- JADUAL MURID -->
+        <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+            <div class="p-5 bg-slate-800 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h3 class="text-base font-bold"><i class="fa-solid fa-users text-amber-400"></i> Senarai Induk Murid</h3>
+                    <p class="text-xs text-slate-300 font-normal">Dikemaskini secara automatik ke Google Sheet.</p>
                 </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="nama">NAMA GURU</label>
-                <input type="text" id="nama" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="email">EMAIL RASMI (MOE)</label>
-                <input type="email" id="email" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="tarikhLahir">TARIKH LAHIR (DD/MM/YYYY)</label>
-                <input type="date" id="tarikhLahir" required>
-            </div>
-            
-            <div class="form-group">
-                <label>UMUR</label>
-                <div id="umurDisplay" class="readonly-field">-</div>
-            </div>
-            
-            <div class="form-group">
-                <label for="tempatLahir">TEMPAT LAHIR</label>
-                <select id="tempatLahir" required>
-                    <option value="">Sila pilih negeri</option>
-                    <option value="JOHOR">JOHOR</option>
-                    <option value="KEDAH">KEDAH</option>
-                    <option value="KELANTAN">KELANTAN</option>
-                    <option value="MELAKA">MELAKA</option>
-                    <option value="NEGERI SEMBILAN">NEGERI SEMBILAN</option>
-                    <option value="PAHANG">PAHANG</option>
-                    <option value="PULAU PINANG">PULAU PINANG</option>
-                    <option value="PERAK">PERAK</option>
-                    <option value="PERLIS">PERLIS</option>
-                    <option value="SABAH">SABAH</option>
-                    <option value="SARAWAK">SARAWAK</option>
-                    <option value="SELANGOR">SELANGOR</option>
-                    <option value="TERENGGANU">TERENGGANU</option>
-                    <option value="WILAYAH PERSEKUTUAN KUALA LUMPUR">WILAYAH PERSEKUTUAN KUALA LUMPUR</option>
-                    <option value="WILAYAH PERSEKUTUAN LABUAN">WILAYAH PERSEKUTUAN LABUAN</option>
-                    <option value="WILAYAH PERSEKUTUAN PUTRAJAYA">WILAYAH PERSEKUTUAN PUTRAJAYA</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="gredJawatan">GRED JAWATAN</label>
-                <select id="gredJawatan" required>
-                    <option value="">Sila pilih gred</option>
-                    <option value="DG1">DG 1</option>
-                    <option value="DG2">DG 2</option>
-                    <option value="DG3">DG 3</option>
-                    <option value="DG4">DG 4</option>
-                    <option value="DG5">DG 5</option>
-                    <option value="DG6">DG 6</option>
-                    <option value="DG7">DG 7</option>
-                    <option value="DG8">DG 8</option>
-                    <option value="DG9">DG 9</option>
-                    <option value="DG10">DG 10</option>
-                    <option value="DG11">DG 11</option>
-                    <option value="DG12">DG 12</option>
-                    <option value="DG13">DG 13</option>
-                    <option value="DG14">DG 14</option>
-                    <option value="DG15">DG 15</option>
-                    <option value="N1">N 1</option>
-                    <option value="N2">N 2</option>
-                    <option value="N3">N 3</option>
-                    <option value="N4">N 4</option>
-                    <option value="N5">N 5</option>
-                    <option value="N6">N 6</option>
-                    <option value="N7">N 7</option>
-                    <option value="N8">N 8</option>
-                    <option value="N9">N 9</option>
-                    <option value="N10">N 10</option>
-                    <option value="N11">N 11</option>
-                    <option value="N12">N 12</option>
-                    <option value="N13">N 13</option>
-                    <option value="N14">N 14</option>
-                    <option value="N15">N 15</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="kelulusanAkademik">KELULUSAN AKADEMIK</label>
-                <input type="text" id="kelulusanAkademik" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="kelayakanIkhtisas">KELAYAKAN IKHTISAS</label>
-                <input type="text" id="kelayakanIkhtisas" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="opsyen1">OPSYEN 1</label>
-                <input type="text" id="opsyen1" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="opsyen2">OPSYEN 2</label>
-                <input type="text" id="opsyen2">
-            </div>
-            
-            <div class="form-group">
-                <label for="institusiPengajian">INSTITUSI PENGAJIAN</label>
-                <input type="text" id="institusiPengajian" required>
+                <div class="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                    <button onclick="openAddModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-2 rounded-lg text-sm transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-user-plus"></i> Tambah Murid
+                    </button>
+                    <div class="relative w-full md:w-64">
+                        <input type="text" id="searchInput" placeholder="Cari nama murid..." class="w-full pl-9 pr-3 py-2 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="tarikhLantikan">TARIKH LANTIKAN</label>
-                <input type="date" id="tarikhLantikan" required>
-            </div>
-            
-            <div class="form-group">
-                <label>TARIKH BERPENCEN</label>
-                <div id="tarikhBersaraDisplay" class="readonly-field">-</div>
-            </div>
-            
-            <div class="form-group service-history">
-                <label>SEJARAH PERKHIDMATAN</label>
-                <table id="sejarahPerkhidmatan">
-                    <thead>
+            <div class="overflow-x-auto h-[400px]">
+                <table class="w-full text-xs text-left text-slate-600 whitespace-nowrap">
+                    <thead class="text-xs text-slate-700 uppercase bg-slate-100 border-b border-slate-200 sticky top-0 z-10">
                         <tr>
-                            <th>Bil</th>
-                            <th>Jawatan</th>
-                            <th>Gred</th>
-                            <th>Sekolah/Institusi</th>
-                            <th>Tempoh</th>
+                            <th class="px-4 py-3">Nama Murid</th>
+                            <th class="px-4 py-3">Kelas</th>
+                            <th class="px-4 py-3">Jantina</th>
+                            <th class="px-4 py-3">Bangsa</th>
+                            <th class="px-4 py-3 text-center">Agama</th>
+                            <th class="px-4 py-3 text-center">RMT</th>
+                            <th class="px-4 py-3 text-center">OKU</th>
+                            <th class="px-4 py-3 text-center">Tindakan</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td><input type="text" class="history-input" required></td>
-                            <td><input type="text" class="history-input" required></td>
-                            <td><input type="text" class="history-input" required></td>
-                            <td><input type="text" class="history-input" required></td>
-                        </tr>
+                    <tbody id="tableBody">
+                        <tr><td colspan="8" class="text-center py-10 text-slate-500">Memuatkan data dari Google Sheet...</td></tr>
                     </tbody>
                 </table>
-                <button type="button" class="add-row" id="tambahBaris">+ Tambah Baris</button>
             </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL (ADD / EDIT) -->
+    <div id="dataModal" class="fixed inset-0 modal-bg hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 overflow-y-auto max-h-[90vh]">
+            <h3 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2" id="modalTitle">
+                <i class="fa-solid fa-user-pen text-amber-500"></i> Borang Maklumat Murid
+            </h3>
             
-            <div class="button-group">
-                <button type="button" class="lihat-btn" id="lihatBorang">LIHAT BORANG</button>
-                <button type="button" class="hantar-btn" id="hantarBorang">HANTAR</button>
-            </div>
-        </form>
+            <form id="dataForm" class="space-y-4">
+                <input type="hidden" id="formMode">
+                <input type="hidden" id="editIndex">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nama Murid</label>
+                    <input type="text" id="inputNama" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none uppercase">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Kelas</label>
+                        <input type="text" id="inputKelas" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Jantina</label>
+                        <select id="inputJantina" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                            <option value="LELAKI">LELAKI</option>
+                            <option value="PEREMPUAN">PEREMPUAN</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Bangsa</label>
+                        <input type="text" id="inputBangsa" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Agama</label>
+                        <select id="inputAgama" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                            <option value="ISLAM">ISLAM</option>
+                            <option value="BUKAN ISLAM">BUKAN ISLAM</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="border-t pt-4 mt-4">
+                    <p class="text-xs font-semibold text-slate-600 uppercase mb-3">Status Bantuan & Kebajikan</p>
+                    <div class="grid grid-cols-3 gap-3">
+                        <label class="flex items-center gap-2 text-sm text-slate-700 bg-slate-50 p-2 rounded border cursor-pointer">
+                            <input type="checkbox" id="inputRMT" class="rounded text-amber-500"> RMT
+                        </label>
+                        <label class="flex items-center gap-2 text-sm text-slate-700 bg-slate-50 p-2 rounded border cursor-pointer">
+                            <input type="checkbox" id="inputBAP" class="rounded text-amber-500"> BAP
+                        </label>
+                        <label class="flex items-center gap-2 text-sm text-slate-700 bg-slate-50 p-2 rounded border cursor-pointer">
+                            <input type="checkbox" id="inputKWAPM" class="rounded text-amber-500"> KWAPM
+                        </label>
+                        <label class="flex items-center gap-2 text-sm text-slate-700 bg-slate-50 p-2 rounded border cursor-pointer">
+                            <input type="checkbox" id="inputAsnaf" class="rounded text-amber-500"> ASNAF
+                        </label>
+                        <label class="flex items-center gap-2 text-sm text-slate-700 bg-slate-50 p-2 rounded border cursor-pointer">
+                            <input type="checkbox" id="inputOKU" class="rounded text-amber-500"> OKU
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-4 mt-4">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-300 transition">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-amber-500 text-slate-900 text-xs font-bold rounded-lg hover:bg-amber-600 transition">Simpan</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
-        // Inisialisasi jsPDF
-        const { jsPDF } = window.jspdf;
-        
-        // Auto uppercase for text inputs except email
-        document.querySelectorAll('input[type="text"]').forEach(input => {
-            input.addEventListener('input', function() {
-                this.value = this.value.toUpperCase();
-            });
+        let rawData = [];
+        let chartBangsaInstance = null;
+        let chartBantuanInstance = null;
+
+        // Auto load data apabila page dibuka
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFromGoogleSheet();
         });
-        
-        // Photo preview
-        document.getElementById('gambar').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('photoPreview');
-                    preview.innerHTML = `<img src="${e.target.result}" alt="Preview Gambar">`;
-                }
-                reader.readAsDataURL(file);
-            }
-        });
-        
-        // Add row to service history table
-        document.getElementById('tambahBaris').addEventListener('click', function() {
-            const table = document.getElementById('sejarahPerkhidmatan').getElementsByTagName('tbody')[0];
-            const rowCount = table.rows.length;
-            
-            if (rowCount < 5) {
-                const newRow = table.insertRow();
-                newRow.innerHTML = `
-                    <td>${rowCount + 1}</td>
-                    <td><input type="text" class="history-input" required></td>
-                    <td><input type="text" class="history-input" required></td>
-                    <td><input type="text" class="history-input" required></td>
-                    <td><input type="text" class="history-input" required></td>
-                `;
-                
-                // Add uppercase for new inputs
-                newRow.querySelectorAll('input[type="text"]').forEach(input => {
-                    input.addEventListener('input', function() {
-                        this.value = this.value.toUpperCase();
-                    });
-                });
-            } else {
-                alert('Maksimum 5 baris sahaja dibenarkan.');
-            }
-        });
-        
-        // Format tarikh untuk paparan
-        function formatTarikh(tarikh) {
-            if (!tarikh) return '';
-            const date = new Date(tarikh);
-            const day = date.getDate().toString().padStart(2, '0');
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const year = date.getFullYear();
-            return `${day}/${month}/${year}`;
+
+        // NATIVE GAS API CALL: Mengambil data terus dari Google Sheet
+        function loadFromGoogleSheet() {
+            document.getElementById('statusText').innerText = "Menghubungkan ke Google Sheet...";
+            google.script.run
+                .withSuccessHandler(data => {
+                    rawData = data;
+                    document.getElementById('statusText').innerText = `Data berjaya dimuatkan (${rawData.length} rekod).`;
+                    processDashboard();
+                })
+                .withFailureHandler(err => {
+                    document.getElementById('statusText').innerText = "Ralat: " + err.message;
+                })
+                .getAllData();
         }
 
-        // Fungsi untuk mengira umur
-        function kiraUmur(tarikhLahir) {
-            if (!tarikhLahir) return null;
-            
-            const lahir = new Date(tarikhLahir);
-            const hariIni = new Date();
-            
-            let umur = hariIni.getFullYear() - lahir.getFullYear();
-            const bulan = hariIni.getMonth() - lahir.getMonth();
-            
-            if (bulan < 0 || (bulan === 0 && hariIni.getDate() < lahir.getDate())) {
-                umur--;
-            }
-            
-            return umur;
-        }
-        
-// Fungsi untuk mengira tarikh berpencen berdasarkan umur semasa
-function kiraTarikhBersara(tarikhLahir) {
-    if (!tarikhLahir) return null;
-    
-    const lahir = new Date(tarikhLahir);
-    const hariIni = new Date();
-    
-    // Kira umur semasa
-    let umur = hariIni.getFullYear() - lahir.getFullYear();
-    const bulan = hariIni.getMonth() - lahir.getMonth();
-    
-    if (bulan < 0 || (bulan === 0 && hariIni.getDate() < lahir.getDate())) {
-        umur--;
-    }
-    
-    // Kira tarikh persaraan (tarikh lahir + 60 tahun)
-    const tarikhPersaraan = new Date(lahir);
-    tarikhPersaraan.setFullYear(tarikhPersaraan.getFullYear() + 60);
-    
-    return tarikhPersaraan;
-}        
-        // Fungsi untuk mengemas kini umur dan tarikh bersara
-        function kemaskiniUmurDanBersara() {
-            const tarikhLahir = document.getElementById('tarikhLahir').value;
-            
-            // Kira dan papar umur
-            const umur = kiraUmur(tarikhLahir);
-            document.getElementById('umurDisplay').textContent = umur !== null ? umur + ' tahun' : '-';
-            
-            // Kira dan papar tarikh bersara
-            const tarikhBersara = kiraTarikhBersara(tarikhLahir);
-            document.getElementById('tarikhBersaraDisplay').textContent = tarikhBersara ? formatTarikh(tarikhBersara) : '-';
-        }
-        
-        // Tambah event listeners untuk mengira semula bila tarikh lahir berubah
-        document.getElementById('tarikhLahir').addEventListener('change', function() {
-            kemaskiniUmurDanBersara();
-            const date = new Date(this.value);
-            if (!isNaN(date.getTime())) {
-                this.style.color = '#333';
-            }
+        // MUAT NAIK EXCEL PUKAL
+        document.getElementById('uploadExcel').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                let sheetName = workbook.SheetNames.find(s => s.toLowerCase().includes('sheet2')) || workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                
+                let jsonData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+                rawData = jsonData.filter(row => row['NAMA MURID'] && row['NAMA MURID'].trim() !== '');
+                processDashboard();
+
+                if (confirm("Adakah anda mahu menyimpankan fail Excel ini ke dalam Google Sheet secara pukal?")) {
+                    document.getElementById('statusText').innerText = "Menyimpan data pukal ke Google Sheet...";
+                    google.script.run
+                        .withSuccessHandler(() => {
+                            document.getElementById('statusText').innerText = "Semua data Excel berjaya disimpan ke Google Sheet!";
+                        })
+                        .syncAllBulk(rawData);
+                }
+            };
+            reader.readAsArrayBuffer(file);
         });
-        
-        // Format date display (for better UX)
-        document.querySelectorAll('input[type="date"]').forEach(input => {
-            input.addEventListener('change', function() {
-                const date = new Date(this.value);
-                if (!isNaN(date.getTime())) {
-                    this.style.color = '#333';
+
+        function processDashboard() {
+            updateKPIs();
+            renderTable(document.getElementById('searchInput').value);
+            renderCharts();
+        }
+
+        function updateKPIs() {
+            let stats = {
+                total: rawData.length, lelaki: 0, perempuan: 0,
+                rmtL: 0, rmtP: 0, bap: 0, kwapm: 0, islam: 0, bukanIslam: 0,
+                asnaf: 0, oku: 0, bangsa: {}
+            };
+
+            rawData.forEach(row => {
+                const jantina = String(row['JANTINA'] || '').toUpperCase().trim();
+                const bangsa = String(row['BANGSA'] || '').toUpperCase().trim() || 'LAIN-LAIN';
+                const agama = String(row['AGAMA'] || '').toUpperCase().trim();
+                
+                const isRMT = String(row['STATUS RMT'] || '').toUpperCase().trim() === 'YA';
+                const isBAP = String(row['STATUS BAP'] || '').toUpperCase().trim() === 'YA';
+                const isKWAPM = String(row['STATUS KWAPM'] || '').toUpperCase().trim() === 'YA';
+                const isAsnaf = String(row['ASNAF'] || '').toUpperCase().trim() === 'YA';
+                const isOKU = String(row['OKU'] || '').toUpperCase().trim() === 'YA';
+
+                if (jantina === 'LELAKI') stats.lelaki++;
+                if (jantina === 'PEREMPUAN') stats.perempuan++;
+
+                stats.bangsa[bangsa] = (stats.bangsa[bangsa] || 0) + 1;
+
+                if (agama === 'ISLAM') stats.islam++;
+                else if (agama !== '') stats.bukanIslam++;
+
+                if (isRMT) {
+                    if (jantina === 'LELAKI') stats.rmtL++;
+                    if (jantina === 'PEREMPUAN') stats.rmtP++;
+                }
+                if (isBAP) stats.bap++;
+                if (isKWAPM) stats.kwapm++;
+                if (isAsnaf) stats.asnaf++;
+                if (isOKU) stats.oku++;
+            });
+
+            document.getElementById('kpiTotal').innerText = stats.total;
+            document.getElementById('kpiLelaki').innerText = `${stats.lelaki} L`;
+            document.getElementById('kpiPerempuan').innerText = `${stats.perempuan} P`;
+            document.getElementById('kpiRMT').innerText = stats.rmtL + stats.rmtP;
+            document.getElementById('kpiRMTL').innerText = `${stats.rmtL} L`;
+            document.getElementById('kpiRMTP').innerText = `${stats.rmtP} P`;
+            document.getElementById('kpiBAP').innerText = stats.bap;
+            document.getElementById('kpiKWAPM').innerText = stats.kwapm;
+            document.getElementById('kpiAsnaf').innerText = stats.asnaf;
+            document.getElementById('kpiOKU').innerText = stats.oku;
+            document.getElementById('kpiAgama').innerText = `Islam: ${stats.islam}`;
+            document.getElementById('kpiBukanIslam').innerText = `Bukan Islam: ${stats.bukanIslam}`;
+
+            let majoriti = "Tiada Data"; let maxVal = 0;
+            for (const [b, count] of Object.entries(stats.bangsa)) {
+                if (count > maxVal) { maxVal = count; majoriti = b; }
+            }
+            document.getElementById('kpiMajoriti').innerText = `${majoriti} (${maxVal})`;
+            
+            window.chartDataBangsa = stats.bangsa;
+            window.chartDataBantuan = [stats.rmtL + stats.rmtP, stats.bap, stats.kwapm, stats.asnaf, stats.oku];
+        }
+
+        function renderTable(searchTerm = "") {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            const filtered = rawData.filter(row => {
+                const name = String(row['NAMA MURID'] || '').toLowerCase();
+                return name.includes(searchTerm.toLowerCase());
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-slate-500">Tiada rekod dijumpai.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach((row) => {
+                const realIndex = rawData.indexOf(row);
+                
+                const formatStatus = (val) => String(val).toUpperCase().trim() === 'YA' 
+                    ? '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-bold text-[10px]">YA</span>' 
+                    : '<span class="text-slate-300">-</span>';
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100 hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="px-4 py-2 font-bold text-slate-800">${row['NAMA MURID'] || ''}</td>
+                    <td class="px-4 py-2">${row['KELAS'] || ''}</td>
+                    <td class="px-4 py-2">${row['JANTINA'] || ''}</td>
+                    <td class="px-4 py-2">${row['BANGSA'] || ''}</td>
+                    <td class="px-4 py-2 text-center">${row['AGAMA'] || ''}</td>
+                    <td class="px-4 py-2 text-center">${formatStatus(row['STATUS RMT'])}</td>
+                    <td class="px-4 py-2 text-center">${formatStatus(row['OKU'])}</td>
+                    <td class="px-4 py-2 text-center">
+                        <button onclick="openEditModal(${realIndex})" class="text-blue-500 hover:bg-blue-50 px-2 py-1 rounded transition mr-1"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteStudent(${realIndex})" class="text-red-500 hover:bg-red-50 px-2 py-1 rounded transition"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById('searchInput').addEventListener('input', (e) => renderTable(e.target.value));
+
+        function deleteStudent(index) {
+            const name = rawData[index]['NAMA MURID'];
+            if (confirm(`Adakah anda pasti untuk memadam murid:\n${name}?`)) {
+                rawData.splice(index, 1);
+                processDashboard();
+
+                google.script.run
+                    .withSuccessHandler(() => loadFromGoogleSheet())
+                    .deleteStudentBackend(name);
+            }
+        }
+
+        function openAddModal() {
+            document.getElementById('formMode').value = 'add';
+            document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-user-plus text-amber-500"></i> Tambah Murid Baharu';
+            document.getElementById('dataForm').reset();
+            document.getElementById('inputBangsa').value = 'MELAYU';
+            document.getElementById('dataModal').classList.remove('hidden');
+        }
+
+        function openEditModal(index) {
+            const row = rawData[index];
+            document.getElementById('formMode').value = 'edit';
+            document.getElementById('editIndex').value = index;
+            document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-user-pen text-blue-500"></i> Kemaskini Rekod Murid';
+            
+            document.getElementById('inputNama').value = row['NAMA MURID'] || '';
+            document.getElementById('inputKelas').value = row['KELAS'] || '';
+            document.getElementById('inputJantina').value = String(row['JANTINA'] || '').toUpperCase().trim();
+            document.getElementById('inputBangsa').value = row['BANGSA'] || '';
+            document.getElementById('inputAgama').value = String(row['AGAMA'] || '').toUpperCase().trim();
+            
+            document.getElementById('inputRMT').checked = String(row['STATUS RMT']).toUpperCase().trim() === 'YA';
+            document.getElementById('inputBAP').checked = String(row['STATUS BAP']).toUpperCase().trim() === 'YA';
+            document.getElementById('inputKWAPM').checked = String(row['STATUS KWAPM']).toUpperCase().trim() === 'YA';
+            document.getElementById('inputAsnaf').checked = String(row['ASNAF']).toUpperCase().trim() === 'YA';
+            document.getElementById('inputOKU').checked = String(row['OKU']).toUpperCase().trim() === 'YA';
+
+            document.getElementById('dataModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('dataModal').classList.add('hidden');
+        }
+
+        document.getElementById('dataForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const mode = document.getElementById('formMode').value;
+
+            let studentData = {
+                'NAMA MURID': document.getElementById('inputNama').value.toUpperCase(),
+                'KELAS': document.getElementById('inputKelas').value.toUpperCase(),
+                'JANTINA': document.getElementById('inputJantina').value,
+                'BANGSA': document.getElementById('inputBangsa').value.toUpperCase(),
+                'AGAMA': document.getElementById('inputAgama').value,
+                'STATUS RMT': document.getElementById('inputRMT').checked ? 'YA' : 'TIDAK',
+                'STATUS BAP': document.getElementById('inputBAP').checked ? 'YA' : 'TIDAK',
+                'STATUS KWAPM': document.getElementById('inputKWAPM').checked ? 'YA' : 'TIDAK',
+                'ASNAF': document.getElementById('inputAsnaf').checked ? 'YA' : 'TIDAK',
+                'OKU': document.getElementById('inputOKU').checked ? 'YA' : 'TIDAK'
+            };
+
+            if (mode === 'add') {
+                rawData.unshift(studentData);
+                google.script.run
+                    .withSuccessHandler(() => loadFromGoogleSheet())
+                    .addStudentBackend(studentData);
+            } else if (mode === 'edit') {
+                const index = document.getElementById('editIndex').value;
+                rawData[index] = { ...rawData[index], ...studentData };
+                google.script.run
+                    .withSuccessHandler(() => loadFromGoogleSheet())
+                    .editStudentBackend(studentData);
+            }
+
+            closeModal();
+            processDashboard();
+        });
+
+        function renderCharts() {
+            const ctxBangsa = document.getElementById('chartBangsa').getContext('2d');
+            if (chartBangsaInstance) chartBangsaInstance.destroy();
+            
+            chartBangsaInstance = new Chart(ctxBangsa, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(window.chartDataBangsa),
+                    datasets: [{
+                        data: Object.values(window.chartDataBangsa),
+                        backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#0ea5e9', '#ec4899']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+            });
+
+            const ctxBantuan = document.getElementById('chartBantuan').getContext('2d');
+            if (chartBantuanInstance) chartBantuanInstance.destroy();
+
+            chartBantuanInstance = new Chart(ctxBantuan, {
+                type: 'bar',
+                data: {
+                    labels: ['RMT', 'BAP', 'KWAPM', 'Asnaf', 'OKU'],
+                    datasets: [{
+                        label: 'Bilangan Murid',
+                        data: window.chartDataBantuan,
+                        backgroundColor: ['#f59e0b', '#10b981', '#06b6d4', '#f43f5e', '#a855f7'],
+                        borderRadius: 4
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                    plugins: { legend: { display: false } }
                 }
             });
-        });
-        
-        // Fungsi untuk menghasilkan PDF
-        function generatePDF() {
-            const doc = new jsPDF();
-            
-            // Header
-            doc.setFontSize(16);
-            doc.setTextColor(30, 58, 138);
-            doc.text('BORANG BIODATA STAF', 105, 20, { align: 'center' });
-            doc.setFontSize(14);
-            doc.text('SK ABANG GESA', 105, 27, { align: 'center' });
-            
-            // Garisan
-            doc.setDrawColor(30, 58, 138);
-            doc.setLineWidth(0.5);
-            doc.line(20, 30, 190, 30);
-            
-            // Maklumat Asas
-            doc.setFontSize(12);
-            doc.setTextColor(0, 0, 0);
-            
-            let yPosition = 40;
-            
-            // Gambar (jika ada)
-            const photoPreview = document.getElementById('photoPreview').querySelector('img');
-            if (photoPreview) {
-                doc.addImage(photoPreview.src, 'JPEG', 20, yPosition, 30, 40);
-            }
-            
-            // Maklumat peribadi
-            doc.text(`NAMA GURU: ${document.getElementById('nama').value}`, 60, yPosition + 10);
-            doc.text(`EMAIL RASMI: ${document.getElementById('email').value}`, 60, yPosition + 20);
-            doc.text(`TARIKH LAHIR: ${formatTarikh(document.getElementById('tarikhLahir').value)}`, 60, yPosition + 30);
-            doc.text(`UMUR: ${document.getElementById('umurDisplay').textContent}`, 60, yPosition + 40);
-            doc.text(`TEMPAT LAHIR: ${document.getElementById('tempatLahir').value}`, 60, yPosition + 50);
-            
-            yPosition += 70;
-            
-            // Maklumat profesional
-            doc.text(`GRED JAWATAN: ${document.getElementById('gredJawatan').value}`, 20, yPosition);
-            doc.text(`KELULUSAN AKADEMIK: ${document.getElementById('kelulusanAkademik').value}`, 20, yPosition + 10);
-            doc.text(`KELAYAKAN IKHTISAS: ${document.getElementById('kelayakanIkhtisas').value}`, 20, yPosition + 20);
-            doc.text(`OPSYEN 1: ${document.getElementById('opsyen1').value}`, 20, yPosition + 30);
-            doc.text(`OPSYEN 2: ${document.getElementById('opsyen2').value || '-'}`, 20, yPosition + 40);
-            doc.text(`INSTITUSI PENGAJIAN: ${document.getElementById('institusiPengajian').value}`, 20, yPosition + 50);
-            doc.text(`TARIKH LANTIKAN: ${formatTarikh(document.getElementById('tarikhLantikan').value)}`, 20, yPosition + 60);
-            doc.text(`TARIKH BERPENCEN: ${document.getElementById('tarikhBersaraDisplay').textContent}`, 20, yPosition + 70);
-            
-            yPosition += 90;
-            
-            // Sejarah Perkhidmatan
-            doc.setFontSize(14);
-            doc.setTextColor(30, 58, 138);
-            doc.text('SEJARAH PERKHIDMATAN', 20, yPosition);
-            yPosition += 10;
-            
-            const tableRows = [];
-            const rows = document.querySelectorAll('#sejarahPerkhidmatan tbody tr');
-            
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('input');
-                tableRows.push([
-                    row.cells[0].textContent,
-                    cells[0].value,
-                    cells[1].value,
-                    cells[2].value,
-                    cells[3].value
-                ]);
-            });
-            
-            doc.autoTable({
-                startY: yPosition,
-                head: [['Bil', 'Jawatan', 'Gred', 'Sekolah/Institusi', 'Tempoh']],
-                body: tableRows,
-                margin: { top: 10 },
-                styles: { fontSize: 10 }
-            });
-            
-            // Simpan PDF
-            doc.save(`Biodata_${document.getElementById('nama').value.replace(/\s+/g, '_')}.pdf`);
         }
-        
-        // Lihat Borang button
-        document.getElementById('lihatBorang').addEventListener('click', function() {
-            if (document.getElementById('biodataForm').checkValidity()) {
-                generatePDF();
-            } else {
-                alert('Sila isi semua maklumat yang diperlukan.');
-                document.getElementById('biodataForm').reportValidity();
-            }
-        });
-        
-        // Hantar Borang button
-        document.getElementById('hantarBorang').addEventListener('click', function() {
-            if (document.getElementById('biodataForm').checkValidity()) {
-                // Pertama, hasilkan PDF
-                generatePDF();
-                
-                // Kemudian buka WhatsApp
-                const phoneNumber = '60106607787'; // Fixed WhatsApp number format
-                const message = `Biodata Staf SK Abang Gesa\nNama: ${document.getElementById('nama').value}\nEmail: ${document.getElementById('email').value}`;
-                const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-                
-                // Buka WhatsApp dalam tab baru
-                window.open(whatsappUrl, '_blank');
-            } else {
-                alert('Sila isi semua maklumat yang diperlukan.');
-                document.getElementById('biodataForm').reportValidity();
-            }
-        });
     </script>
 </body>
 </html>
