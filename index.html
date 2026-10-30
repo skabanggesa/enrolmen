@@ -1,500 +1,480 @@
 <!DOCTYPE html>
 <html lang="ms">
 <head>
-    <meta charset="UTF-8">
-    <title>Dashboard Analisis Murid & Kebajikan</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f172a">
+  <title>Analisis Enrolmen Murid | SAGE</title>
 
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .dark-header { background-color: #1e293b; color: #ffffff; }
-        .kpi-card { transition: transform 0.2s; }
-        .kpi-card:hover { transform: translateY(-3px); }
-        .modal-bg { background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
-    </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    :root { color-scheme: light; }
+    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .kpi-card { transition: transform .18s ease, box-shadow .18s ease; }
+    .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(15,23,42,.08); }
+    .filter-select { width:100%; border:1px solid #cbd5e1; border-radius:10px; padding:10px 12px; background:#fff; color:#0f172a; font-size:13px; outline:none; }
+    .filter-select:focus { border-color:#0d9488; box-shadow:0 0 0 3px rgba(13,148,136,.12); }
+    .chart-wrap { position:relative; height:280px; }
+    .status-dot { width:8px;height:8px;border-radius:999px;display:inline-block;background:#94a3b8; }
+    .status-dot.online { background:#10b981; box-shadow:0 0 0 3px rgba(16,185,129,.12); }
+    .status-dot.error { background:#ef4444; }
+    .skeleton { background:linear-gradient(90deg,#e2e8f0 25%,#f8fafc 50%,#e2e8f0 75%);background-size:200% 100%;animation:shimmer 1.3s infinite; }
+    @keyframes shimmer { to { background-position:-200% 0; } }
+    @media print {
+      body { background:#fff!important; }
+      header { background:#0f172a!important; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+      .no-print { display:none!important; }
+      main { margin-top:16px!important; }
+      .kpi-card,.chart-card { break-inside:avoid; box-shadow:none!important; }
+    }
+  </style>
 </head>
-<body class="bg-slate-50 min-h-screen pb-12">
 
-    <!-- HEADER -->
-    <header class="dark-header py-8 px-4 text-center border-b-4 border-amber-500 shadow-md">
-        <div class="max-w-7xl mx-auto">
-            <h1 class="text-2xl md:text-3xl font-bold tracking-wide uppercase text-amber-400">Pangkalan Data Murid & Kebajikan (HEM)</h1>
-            <p class="text-slate-300 text-sm mt-2">Sistem Web App Terkumpul (Google Apps Script Cloud)</p>
+<body class="min-h-screen bg-slate-50 text-slate-800">
+  <header class="bg-slate-900 text-white border-b-4 border-teal-500 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 py-7 md:py-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2 text-teal-300 text-xs font-bold tracking-[.22em] uppercase mb-2">
+          <i class="fa-solid fa-chart-line"></i> SAGE · HEM
         </div>
-    </header>
+        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Analisis Enrolmen Murid</h1>
+        <p class="text-slate-300 text-sm mt-2">Analisis demografi, maklumat murid dan bantuan kebajikan</p>
+      </div>
+      <div class="no-print flex flex-wrap items-center gap-2">
+        <span class="inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-2 text-xs text-slate-300 border border-slate-700">
+          <span id="connectionDot" class="status-dot"></span>
+          <span id="statusText">Menyambung ke Firebase...</span>
+        </span>
+        <button id="refreshBtn" type="button" class="rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs px-4 py-2.5 transition">
+          <i class="fa-solid fa-rotate mr-1"></i> Muat Semula
+        </button>
+        <button type="button" onclick="window.print()" class="rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs px-4 py-2.5 transition">
+          <i class="fa-solid fa-print mr-1"></i> Cetak Analisis
+        </button>
+      </div>
+    </div>
+  </header>
 
-    <main class="max-w-7xl mx-auto px-4 mt-8 space-y-8">
-
-        <!-- KAWALAN DATA -->
-        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-cloud text-amber-500"></i> Pangkalan Data Google Sheet
-                </h2>
-                <p class="text-xs text-slate-500" id="statusText">Menghubungkan ke Google Sheet...</p>
-            </div>
-            <div class="flex gap-2">
-                <label class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-4 py-2 rounded-lg transition flex items-center gap-2 border text-xs">
-                    <i class="fa-solid fa-file-excel text-emerald-600"></i> Muat Naik Excel (Pukal)
-                    <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="hidden">
-                </label>
-                <button onclick="loadFromGoogleSheet()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-lg text-xs transition flex items-center gap-2 shadow-sm">
-                    <i class="fa-solid fa-rotate"></i> Muat Semula Data
-                </button>
-            </div>
-        </section>
-
-        <!-- KPI UTAMA -->
-        <section class="grid grid-cols-2 md:grid-cols-4 gap-4" id="kpiSection">
-            <div class="kpi-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-blue-500">
-                <p class="text-xs text-slate-500 uppercase font-bold">Enrolmen & Jantina</p>
-                <h3 class="text-2xl font-extrabold text-slate-800 mt-1" id="kpiTotal">0</h3>
-                <p class="text-xs font-semibold mt-1 text-slate-600"><span class="text-blue-600" id="kpiLelaki">0 L</span> / <span class="text-pink-500" id="kpiPerempuan">0 P</span></p>
-            </div>
-            <div class="kpi-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-amber-500">
-                <p class="text-xs text-slate-500 uppercase font-bold">Penerima RMT</p>
-                <h3 class="text-2xl font-extrabold text-amber-600 mt-1" id="kpiRMT">0</h3>
-                <p class="text-xs font-semibold mt-1 text-slate-600"><span class="text-blue-600" id="kpiRMTL">0 L</span> / <span class="text-pink-500" id="kpiRMTP">0 P</span></p>
-            </div>
-            <div class="kpi-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-emerald-500">
-                <p class="text-xs text-slate-500 uppercase font-bold">Penerima BAP</p>
-                <h3 class="text-2xl font-extrabold text-emerald-600 mt-1" id="kpiBAP">0</h3>
-                <p class="text-xs text-slate-400 mt-1">Bantuan Awal Persekolahan</p>
-            </div>
-            <div class="kpi-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-cyan-500">
-                <p class="text-xs text-slate-500 uppercase font-bold">Penerima KWAPM</p>
-                <h3 class="text-2xl font-extrabold text-cyan-600 mt-1" id="kpiKWAPM">0</h3>
-                <p class="text-xs text-slate-400 mt-1">KWAPM</p>
-            </div>
-            <div class="kpi-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-indigo-500">
-                <p class="text-xs text-slate-500 uppercase font-bold">Analisis Agama</p>
-                <h3 class="text-xl font-bold text-slate-800 mt-1" id="kpiAgama">Islam: 0</h3>
-                <p class="text-xs text-slate-500 mt-1" id="kpiBukanIslam">Bukan Islam: 0</p>
-            </div>
-            <div class="kpi-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-orange-500">
-                <p class="text-xs text-slate-500 uppercase font-bold">Bangsa Majoriti</p>
-                <h3 class="text-xl font-bold text-slate-800 mt-1" id="kpiMajoriti">Tiada Data</h3>
-                <p class="text-xs text-slate-400 mt-1">Pecahan di carta</p>
-            </div>
-            <div class="kpi-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-rose-500">
-                <p class="text-xs text-slate-500 uppercase font-bold">Kategori Asnaf</p>
-                <h3 class="text-2xl font-extrabold text-rose-600 mt-1" id="kpiAsnaf">0</h3>
-                <p class="text-xs text-slate-400 mt-1">Layak Terima Bantuan</p>
-            </div>
-            <div class="kpi-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-purple-500">
-                <p class="text-xs text-slate-500 uppercase font-bold">Murid OKU / PPKI</p>
-                <h3 class="text-2xl font-extrabold text-purple-600 mt-1" id="kpiOKU">0</h3>
-                <p class="text-xs text-slate-400 mt-1">Berdaftar JKM</p>
-            </div>
-        </section>
-
-        <!-- CARTA -->
-        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                <h3 class="text-sm font-bold text-slate-800 mb-4"><i class="fa-solid fa-chart-pie text-orange-500"></i> Pecahan Bangsa</h3>
-                <div class="h-56 relative"><canvas id="chartBangsa"></canvas></div>
-            </div>
-            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm lg:col-span-2">
-                <h3 class="text-sm font-bold text-slate-800 mb-4"><i class="fa-solid fa-hand-holding-heart text-amber-500"></i> Analisis Bantuan & Kebajikan</h3>
-                <div class="h-56 relative"><canvas id="chartBantuan"></canvas></div>
-            </div>
-        </section>
-
-        <!-- JADUAL MURID -->
-        <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-            <div class="p-5 bg-slate-800 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h3 class="text-base font-bold"><i class="fa-solid fa-users text-amber-400"></i> Senarai Induk Murid</h3>
-                    <p class="text-xs text-slate-300 font-normal">Dikemaskini secara automatik ke Google Sheet.</p>
-                </div>
-                <div class="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-                    <button onclick="openAddModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-2 rounded-lg text-sm transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-user-plus"></i> Tambah Murid
-                    </button>
-                    <div class="relative w-full md:w-64">
-                        <input type="text" id="searchInput" placeholder="Cari nama murid..." class="w-full pl-9 pr-3 py-2 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="overflow-x-auto h-[400px]">
-                <table class="w-full text-xs text-left text-slate-600 whitespace-nowrap">
-                    <thead class="text-xs text-slate-700 uppercase bg-slate-100 border-b border-slate-200 sticky top-0 z-10">
-                        <tr>
-                            <th class="px-4 py-3">Nama Murid</th>
-                            <th class="px-4 py-3">Kelas</th>
-                            <th class="px-4 py-3">Jantina</th>
-                            <th class="px-4 py-3">Bangsa</th>
-                            <th class="px-4 py-3 text-center">Agama</th>
-                            <th class="px-4 py-3 text-center">RMT</th>
-                            <th class="px-4 py-3 text-center">OKU</th>
-                            <th class="px-4 py-3 text-center">Tindakan</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        <tr><td colspan="8" class="text-center py-10 text-slate-500">Memuatkan data dari Google Sheet...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- MODAL (ADD / EDIT) -->
-    <div id="dataModal" class="fixed inset-0 modal-bg hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 overflow-y-auto max-h-[90vh]">
-            <h3 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2" id="modalTitle">
-                <i class="fa-solid fa-user-pen text-amber-500"></i> Borang Maklumat Murid
-            </h3>
-            
-            <form id="dataForm" class="space-y-4">
-                <input type="hidden" id="formMode">
-                <input type="hidden" id="editIndex">
-                
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nama Murid</label>
-                    <input type="text" id="inputNama" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none uppercase">
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Kelas</label>
-                        <input type="text" id="inputKelas" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none uppercase">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Jantina</label>
-                        <select id="inputJantina" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-                            <option value="LELAKI">LELAKI</option>
-                            <option value="PEREMPUAN">PEREMPUAN</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Bangsa</label>
-                        <input type="text" id="inputBangsa" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none uppercase">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Agama</label>
-                        <select id="inputAgama" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-                            <option value="ISLAM">ISLAM</option>
-                            <option value="BUKAN ISLAM">BUKAN ISLAM</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="border-t pt-4 mt-4">
-                    <p class="text-xs font-semibold text-slate-600 uppercase mb-3">Status Bantuan & Kebajikan</p>
-                    <div class="grid grid-cols-3 gap-3">
-                        <label class="flex items-center gap-2 text-sm text-slate-700 bg-slate-50 p-2 rounded border cursor-pointer">
-                            <input type="checkbox" id="inputRMT" class="rounded text-amber-500"> RMT
-                        </label>
-                        <label class="flex items-center gap-2 text-sm text-slate-700 bg-slate-50 p-2 rounded border cursor-pointer">
-                            <input type="checkbox" id="inputBAP" class="rounded text-amber-500"> BAP
-                        </label>
-                        <label class="flex items-center gap-2 text-sm text-slate-700 bg-slate-50 p-2 rounded border cursor-pointer">
-                            <input type="checkbox" id="inputKWAPM" class="rounded text-amber-500"> KWAPM
-                        </label>
-                        <label class="flex items-center gap-2 text-sm text-slate-700 bg-slate-50 p-2 rounded border cursor-pointer">
-                            <input type="checkbox" id="inputAsnaf" class="rounded text-amber-500"> ASNAF
-                        </label>
-                        <label class="flex items-center gap-2 text-sm text-slate-700 bg-slate-50 p-2 rounded border cursor-pointer">
-                            <input type="checkbox" id="inputOKU" class="rounded text-amber-500"> OKU
-                        </label>
-                    </div>
-                </div>
-
-                <div class="flex justify-end gap-2 pt-4 mt-4">
-                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-300 transition">Batal</button>
-                    <button type="submit" class="px-4 py-2 bg-amber-500 text-slate-900 text-xs font-bold rounded-lg hover:bg-amber-600 transition">Simpan</button>
-                </div>
-            </form>
+  <main class="max-w-7xl mx-auto px-4 py-7 space-y-6">
+    <!-- FILTER MAKLUMAT -->
+    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6 no-print">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-5">
+        <div>
+          <h2 class="font-extrabold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-sliders text-teal-600"></i> Tapis Analisis Mengikut Maklumat</h2>
+          <p class="text-xs text-slate-500 mt-1">Pilih satu atau lebih kriteria. Semua kad dan carta akan dikira semula secara automatik.</p>
         </div>
+        <button id="resetFiltersBtn" type="button" class="text-xs font-bold text-teal-700 hover:text-teal-900 px-3 py-2 rounded-lg hover:bg-teal-50">
+          <i class="fa-solid fa-filter-circle-xmark mr-1"></i> Reset Semua Filter
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <label class="block"><span class="block text-[11px] uppercase tracking-wide font-bold text-slate-500 mb-1.5">Tahun</span><select id="filterTahun" class="filter-select"><option value="">Semua Tahun</option></select></label>
+        <label class="block"><span class="block text-[11px] uppercase tracking-wide font-bold text-slate-500 mb-1.5">Kelas</span><select id="filterKelas" class="filter-select"><option value="">Semua Kelas</option></select></label>
+        <label class="block"><span class="block text-[11px] uppercase tracking-wide font-bold text-slate-500 mb-1.5">Jantina</span><select id="filterJantina" class="filter-select"><option value="">Semua Jantina</option></select></label>
+        <label class="block"><span class="block text-[11px] uppercase tracking-wide font-bold text-slate-500 mb-1.5">Bangsa</span><select id="filterBangsa" class="filter-select"><option value="">Semua Bangsa</option></select></label>
+        <label class="block"><span class="block text-[11px] uppercase tracking-wide font-bold text-slate-500 mb-1.5">Agama</span><select id="filterAgama" class="filter-select"><option value="">Semua Agama</option></select></label>
+        <label class="block"><span class="block text-[11px] uppercase tracking-wide font-bold text-slate-500 mb-1.5">Status RMT</span><select id="filterRMT" class="filter-select"><option value="">Semua Status</option><option value="YA">Penerima RMT</option><option value="TIDAK">Bukan Penerima</option></select></label>
+        <label class="block"><span class="block text-[11px] uppercase tracking-wide font-bold text-slate-500 mb-1.5">Status BAP</span><select id="filterBAP" class="filter-select"><option value="">Semua Status</option><option value="YA">Penerima BAP</option><option value="TIDAK">Bukan Penerima</option></select></label>
+        <label class="block"><span class="block text-[11px] uppercase tracking-wide font-bold text-slate-500 mb-1.5">Status KWAPM</span><select id="filterKWAPM" class="filter-select"><option value="">Semua Status</option><option value="YA">Penerima KWAPM</option><option value="TIDAK">Bukan Penerima</option></select></label>
+        <label class="block"><span class="block text-[11px] uppercase tracking-wide font-bold text-slate-500 mb-1.5">Asnaf</span><select id="filterAsnaf" class="filter-select"><option value="">Semua Status</option><option value="YA">Asnaf</option><option value="TIDAK">Bukan Asnaf</option></select></label>
+        <label class="block"><span class="block text-[11px] uppercase tracking-wide font-bold text-slate-500 mb-1.5">OKU</span><select id="filterOKU" class="filter-select"><option value="">Semua Status</option><option value="YA">Murid OKU</option><option value="TIDAK">Bukan OKU</option></select></label>
+      </div>
+      <div class="mt-4 flex flex-wrap items-center gap-2 text-xs">
+        <span class="text-slate-500">Rekod dalam tapisan:</span>
+        <strong id="filteredCount" class="text-teal-700">—</strong>
+        <span class="text-slate-400">daripada</span>
+        <strong id="overallCount" class="text-slate-700">—</strong>
+        <span id="filterSummary" class="text-slate-400 ml-auto"></span>
+      </div>
+    </section>
+
+    <!-- KPI -->
+    <section>
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-extrabold text-slate-800"><i class="fa-solid fa-chart-simple text-teal-600 mr-2"></i>Ringkasan Analisis</h2>
+        <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Mengikut tapisan aktif</span>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <article class="kpi-card bg-white rounded-xl border border-slate-200 border-l-4 border-l-blue-500 p-4 shadow-sm">
+          <p class="text-[10px] sm:text-xs text-slate-500 uppercase font-bold">Jumlah Enrolmen</p>
+          <p id="kpiTotal" class="text-2xl md:text-3xl font-black text-slate-800 mt-2">—</p>
+          <p class="text-[11px] text-slate-500 mt-1"><span id="kpiLelaki" class="text-blue-600 font-bold">— L</span> <span class="mx-1">/</span> <span id="kpiPerempuan" class="text-pink-600 font-bold">— P</span></p>
+        </article>
+        <article class="kpi-card bg-white rounded-xl border border-slate-200 border-l-4 border-l-amber-500 p-4 shadow-sm">
+          <p class="text-[10px] sm:text-xs text-slate-500 uppercase font-bold">Penerima RMT</p>
+          <p id="kpiRMT" class="text-2xl md:text-3xl font-black text-amber-600 mt-2">—</p>
+          <p class="text-[11px] text-slate-500 mt-1"><span id="kpiRMTL">— L</span> <span class="mx-1">/</span> <span id="kpiRMTP">— P</span></p>
+        </article>
+        <article class="kpi-card bg-white rounded-xl border border-slate-200 border-l-4 border-l-emerald-500 p-4 shadow-sm">
+          <p class="text-[10px] sm:text-xs text-slate-500 uppercase font-bold">Penerima BAP</p>
+          <p id="kpiBAP" class="text-2xl md:text-3xl font-black text-emerald-600 mt-2">—</p>
+          <p class="text-[11px] text-slate-400 mt-1">Bantuan Awal Persekolahan</p>
+        </article>
+        <article class="kpi-card bg-white rounded-xl border border-slate-200 border-l-4 border-l-cyan-500 p-4 shadow-sm">
+          <p class="text-[10px] sm:text-xs text-slate-500 uppercase font-bold">Penerima KWAPM</p>
+          <p id="kpiKWAPM" class="text-2xl md:text-3xl font-black text-cyan-600 mt-2">—</p>
+          <p class="text-[11px] text-slate-400 mt-1">Kumpulan Wang Amanah Pelajar Miskin</p>
+        </article>
+        <article class="kpi-card bg-white rounded-xl border border-slate-200 border-l-4 border-l-indigo-500 p-4 shadow-sm">
+          <p class="text-[10px] sm:text-xs text-slate-500 uppercase font-bold">Agama Islam</p>
+          <p id="kpiIslam" class="text-2xl md:text-3xl font-black text-indigo-600 mt-2">—</p>
+          <p id="kpiBukanIslam" class="text-[11px] text-slate-500 mt-1">Bukan Islam: —</p>
+        </article>
+        <article class="kpi-card bg-white rounded-xl border border-slate-200 border-l-4 border-l-orange-500 p-4 shadow-sm">
+          <p class="text-[10px] sm:text-xs text-slate-500 uppercase font-bold">Bangsa Majoriti</p>
+          <p id="kpiMajoriti" class="text-lg md:text-xl font-black text-slate-800 mt-2 break-words">—</p>
+          <p class="text-[11px] text-slate-400 mt-1">Kategori tertinggi</p>
+        </article>
+        <article class="kpi-card bg-white rounded-xl border border-slate-200 border-l-4 border-l-rose-500 p-4 shadow-sm">
+          <p class="text-[10px] sm:text-xs text-slate-500 uppercase font-bold">Kategori Asnaf</p>
+          <p id="kpiAsnaf" class="text-2xl md:text-3xl font-black text-rose-600 mt-2">—</p>
+          <p class="text-[11px] text-slate-400 mt-1">Status Asnaf: Ya</p>
+        </article>
+        <article class="kpi-card bg-white rounded-xl border border-slate-200 border-l-4 border-l-purple-500 p-4 shadow-sm">
+          <p class="text-[10px] sm:text-xs text-slate-500 uppercase font-bold">Murid OKU</p>
+          <p id="kpiOKU" class="text-2xl md:text-3xl font-black text-purple-600 mt-2">—</p>
+          <p class="text-[11px] text-slate-400 mt-1">Status OKU: Ya</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- CARTA -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <article class="chart-card bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <div class="mb-4">
+          <h3 class="font-extrabold text-slate-800"><i class="fa-solid fa-chart-pie text-orange-500 mr-2"></i>Pecahan Bangsa</h3>
+          <p class="text-xs text-slate-400 mt-1">Taburan bangsa berdasarkan rekod yang ditapis</p>
+        </div>
+        <div class="chart-wrap"><canvas id="chartBangsa"></canvas></div>
+      </article>
+      <article class="chart-card bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <div class="mb-4">
+          <h3 class="font-extrabold text-slate-800"><i class="fa-solid fa-hand-holding-heart text-amber-500 mr-2"></i>Analisis Bantuan & Kebajikan</h3>
+          <p class="text-xs text-slate-400 mt-1">Bilangan penerima mengikut kategori bantuan</p>
+        </div>
+        <div class="chart-wrap"><canvas id="chartBantuan"></canvas></div>
+      </article>
+    </section>
+
+    <div id="emptyState" class="hidden bg-white border border-dashed border-slate-300 rounded-2xl p-10 text-center">
+      <i class="fa-solid fa-filter-circle-xmark text-3xl text-slate-300"></i>
+      <p class="font-bold text-slate-700 mt-3">Tiada rekod sepadan dengan tapisan</p>
+      <p class="text-xs text-slate-500 mt-1">Sila ubah atau reset pilihan tapisan.</p>
     </div>
 
-    <script>
-        let rawData = [];
-        let chartBangsaInstance = null;
-        let chartBantuanInstance = null;
+    <footer class="text-center text-[11px] text-slate-400 pb-4">
+      SAGE · Analisis Enrolmen Murid · Sumber data: Firebase Firestore / panitia-5be3a / students
+    </footer>
+  </main>
 
-        // Auto load data apabila page dibuka
-        window.addEventListener('DOMContentLoaded', () => {
-            loadFromGoogleSheet();
+  <script type="module">
+    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, getDocsFromCache } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // Konfigurasi projek Firebase pusat SAGE.
+    const firebaseConfig = {
+      apiKey: "AIzaSyD834R5Au1ksM0h-G0imluipJIN1br2g2g",
+      authDomain: "panitia-5be3a.firebaseapp.com",
+      projectId: "panitia-5be3a",
+      storageBucket: "panitia-5be3a.firebasestorage.app",
+      messagingSenderId: "814796521590",
+      appId: "1:814796521590:web:c0e31fa985401bcc571f57"
+    };
+
+    const app = getApps().find(item => item.options.projectId === firebaseConfig.projectId)
+      || initializeApp(firebaseConfig, "sageEnrolmenAnalysis");
+    const db = getFirestore(app);
+    const STUDENTS_COLLECTION = "students";
+
+    let allStudents = [];
+    let chartBangsaInstance = null;
+    let chartBantuanInstance = null;
+    let isLoading = false;
+    let loadedAt = null;
+
+    const $ = id => document.getElementById(id);
+
+    // Menyamakan nama medan lama (cth. "STATUS RMT") dan medan Firebase
+    // (cth. statusRmt, status_rmt atau statusRMT).
+    function normalizeKey(value) {
+      return String(value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    }
+
+    function getField(record, aliases) {
+      if (!record || typeof record !== "object") return "";
+      const wanted = aliases.map(normalizeKey);
+      const key = Object.keys(record).find(item => wanted.includes(normalizeKey(item)));
+      const value = key ? record[key] : "";
+      return value === null || value === undefined ? "" : value;
+    }
+
+    function cleanText(value) {
+      if (value === null || value === undefined) return "";
+      if (typeof value === "object") {
+        if (typeof value.toDate === "function") return value.toDate().toLocaleDateString("ms-MY");
+        return "";
+      }
+      return String(value).trim();
+    }
+
+    function cleanGender(value) {
+      const v = cleanText(value).toUpperCase();
+      if (["L", "LELAKI", "MALE", "M"].includes(v)) return "LELAKI";
+      if (["P", "PEREMPUAN", "FEMALE", "F"].includes(v)) return "PEREMPUAN";
+      return v || "TIDAK DINYATAKAN";
+    }
+
+    function isYes(value) {
+      if (value === true || value === 1) return true;
+      const v = cleanText(value).toUpperCase();
+      return ["YA", "YES", "TRUE", "1", "Y", "AKTIF", "LAYAK"].includes(v);
+    }
+
+    function normalizeStudent(docSnap) {
+      const raw = docSnap.data() || {};
+      const kelas = cleanText(getField(raw, ["kelas", "KELAS", "class"]));
+      const explicitYear = cleanText(getField(raw, ["tahun", "TAHUN", "year", "tahunPersekolahan"]));
+      const yearMatch = kelas.match(/(?:tahun|thn)?\s*([1-6])\b/i);
+      const tahun = explicitYear || (yearMatch ? `Tahun ${yearMatch[1]}` :
+        (/ppki/i.test(kelas) ? "PPKI" : (/pra|prasekolah/i.test(kelas) ? "Pra" : "Tidak Dinyatakan")));
+
+      const name = cleanText(getField(raw, ["name", "NAMA", "NAMA MURID", "namaMurid"]));
+      const studentId = cleanText(getField(raw, ["studentId", "ID MURID", "idMurid", "id"]));
+
+      return {
+        docId: docSnap.id,
+        studentId,
+        name,
+        kelas: kelas || "Tidak Dinyatakan",
+        tahun,
+        jantina: cleanGender(getField(raw, ["jantina", "JANTINA", "gender", "sex"])),
+        bangsa: cleanText(getField(raw, ["bangsa", "BANGSA", "race"])) || "Tidak Dinyatakan",
+        agama: cleanText(getField(raw, ["agama", "AGAMA", "religion"])) || "Tidak Dinyatakan",
+        rmt: isYes(getField(raw, ["statusRmt", "STATUS RMT", "status_rmt", "rmt"])),
+        bap: isYes(getField(raw, ["statusBap", "STATUS BAP", "status_bap", "bap"])),
+        kwapm: isYes(getField(raw, ["statusKwapm", "STATUS KWAPM", "status_kwapm", "kwapm"])),
+        asnaf: isYes(getField(raw, ["asnaf", "ASNAF", "statusAsnaf"])),
+        oku: isYes(getField(raw, ["oku", "OKU", "statusOku", "statusOKU"]))
+      };
+    }
+
+    function setStatus(message, state = "normal") {
+      $("statusText").textContent = message;
+      $("connectionDot").className = "status-dot" + (state === "online" ? " online" : state === "error" ? " error" : "");
+    }
+
+    function setSelectOptions(id, values, defaultLabel) {
+      const select = $(id);
+      const previous = select.value;
+      select.innerHTML = "";
+      const first = document.createElement("option");
+      first.value = "";
+      first.textContent = defaultLabel;
+      select.appendChild(first);
+
+      [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b, "ms", { numeric: true }))
+        .forEach(value => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          select.appendChild(option);
         });
 
-        // NATIVE GAS API CALL: Mengambil data terus dari Google Sheet
-        function loadFromGoogleSheet() {
-            document.getElementById('statusText').innerText = "Menghubungkan ke Google Sheet...";
-            google.script.run
-                .withSuccessHandler(data => {
-                    rawData = data;
-                    document.getElementById('statusText').innerText = `Data berjaya dimuatkan (${rawData.length} rekod).`;
-                    processDashboard();
-                })
-                .withFailureHandler(err => {
-                    document.getElementById('statusText').innerText = "Ralat: " + err.message;
-                })
-                .getAllData();
+      if ([...select.options].some(option => option.value === previous)) select.value = previous;
+    }
+
+    function populateFilters() {
+      setSelectOptions("filterTahun", allStudents.map(s => s.tahun), "Semua Tahun");
+      setSelectOptions("filterKelas", allStudents.map(s => s.kelas), "Semua Kelas");
+      setSelectOptions("filterJantina", [...new Set(allStudents.map(s => s.jantina))], "Semua Jantina");
+      setSelectOptions("filterBangsa", allStudents.map(s => s.bangsa), "Semua Bangsa");
+      setSelectOptions("filterAgama", allStudents.map(s => s.agama), "Semua Agama");
+    }
+
+    function getFilteredStudents() {
+      const filters = {
+        tahun: $("filterTahun").value,
+        kelas: $("filterKelas").value,
+        jantina: $("filterJantina").value,
+        bangsa: $("filterBangsa").value,
+        agama: $("filterAgama").value,
+        rmt: $("filterRMT").value,
+        bap: $("filterBAP").value,
+        kwapm: $("filterKWAPM").value,
+        asnaf: $("filterAsnaf").value,
+        oku: $("filterOKU").value
+      };
+
+      return allStudents.filter(student => {
+        if (filters.tahun && student.tahun !== filters.tahun) return false;
+        if (filters.kelas && student.kelas !== filters.kelas) return false;
+        if (filters.jantina && student.jantina !== filters.jantina) return false;
+        if (filters.bangsa && student.bangsa !== filters.bangsa) return false;
+        if (filters.agama && student.agama !== filters.agama) return false;
+        if (filters.rmt && (student.rmt ? "YA" : "TIDAK") !== filters.rmt) return false;
+        if (filters.bap && (student.bap ? "YA" : "TIDAK") !== filters.bap) return false;
+        if (filters.kwapm && (student.kwapm ? "YA" : "TIDAK") !== filters.kwapm) return false;
+        if (filters.asnaf && (student.asnaf ? "YA" : "TIDAK") !== filters.asnaf) return false;
+        if (filters.oku && (student.oku ? "YA" : "TIDAK") !== filters.oku) return false;
+        return true;
+      });
+    }
+
+    function updateKpis(students) {
+      const total = students.length;
+      const lelaki = students.filter(s => s.jantina === "LELAKI").length;
+      const perempuan = students.filter(s => s.jantina === "PEREMPUAN").length;
+      const rmtStudents = students.filter(s => s.rmt);
+      const bap = students.filter(s => s.bap).length;
+      const kwapm = students.filter(s => s.kwapm).length;
+      const islam = students.filter(s => s.agama.toLowerCase() === "islam").length;
+      const asnaf = students.filter(s => s.asnaf).length;
+      const oku = students.filter(s => s.oku).length;
+
+      $("kpiTotal").textContent = total.toLocaleString("ms-MY");
+      $("kpiLelaki").textContent = `${lelaki.toLocaleString("ms-MY")} L`;
+      $("kpiPerempuan").textContent = `${perempuan.toLocaleString("ms-MY")} P`;
+      $("kpiRMT").textContent = rmtStudents.length.toLocaleString("ms-MY");
+      $("kpiRMTL").textContent = `${rmtStudents.filter(s => s.jantina === "LELAKI").length} L`;
+      $("kpiRMTP").textContent = `${rmtStudents.filter(s => s.jantina === "PEREMPUAN").length} P`;
+      $("kpiBAP").textContent = bap.toLocaleString("ms-MY");
+      $("kpiKWAPM").textContent = kwapm.toLocaleString("ms-MY");
+      $("kpiIslam").textContent = islam.toLocaleString("ms-MY");
+      $("kpiBukanIslam").textContent = `Bukan Islam / lain-lain: ${Math.max(0, total - islam).toLocaleString("ms-MY")}`;
+      $("kpiAsnaf").textContent = asnaf.toLocaleString("ms-MY");
+      $("kpiOKU").textContent = oku.toLocaleString("ms-MY");
+
+      const bangsaCounts = {};
+      students.forEach(s => { bangsaCounts[s.bangsa] = (bangsaCounts[s.bangsa] || 0) + 1; });
+      const majority = Object.entries(bangsaCounts).sort((a, b) => b[1] - a[1])[0];
+      $("kpiMajoriti").textContent = majority ? `${majority[0]} (${majority[1]})` : "Tiada Data";
+
+      $("filteredCount").textContent = total.toLocaleString("ms-MY");
+      $("overallCount").textContent = allStudents.length.toLocaleString("ms-MY");
+      const activeCount = ["filterTahun","filterKelas","filterJantina","filterBangsa","filterAgama","filterRMT","filterBAP","filterKWAPM","filterAsnaf","filterOKU"]
+        .filter(id => $(id).value !== "").length;
+      $("filterSummary").textContent = activeCount ? `${activeCount} tapisan aktif` : "Tiada tapisan aktif";
+    }
+
+    function updateCharts(students) {
+      const bangsaCounts = {};
+      students.forEach(s => { bangsaCounts[s.bangsa] = (bangsaCounts[s.bangsa] || 0) + 1; });
+      const bangsaLabels = Object.keys(bangsaCounts).sort((a, b) => bangsaCounts[b] - bangsaCounts[a]);
+
+      if (chartBangsaInstance) chartBangsaInstance.destroy();
+      chartBangsaInstance = new Chart($("chartBangsa"), {
+        type: "doughnut",
+        data: {
+          labels: bangsaLabels.length ? bangsaLabels : ["Tiada Data"],
+          datasets: [{
+            data: bangsaLabels.length ? bangsaLabels.map(label => bangsaCounts[label]) : [1],
+            backgroundColor: ["#f59e0b","#3b82f6","#10b981","#ef4444","#8b5cf6","#0ea5e9","#ec4899","#64748b","#14b8a6"],
+            borderWidth: 2,
+            borderColor: "#fff"
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: "62%",
+          plugins: { legend: { position: "right", labels: { boxWidth: 11, padding: 13, font: { size: 11 } } } }
         }
+      });
 
-        // MUAT NAIK EXCEL PUKAL
-        document.getElementById('uploadExcel').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                let sheetName = workbook.SheetNames.find(s => s.toLowerCase().includes('sheet2')) || workbook.SheetNames[0];
-                const sheet = workbook.Sheets[sheetName];
-                
-                let jsonData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-                rawData = jsonData.filter(row => row['NAMA MURID'] && row['NAMA MURID'].trim() !== '');
-                processDashboard();
-
-                if (confirm("Adakah anda mahu menyimpankan fail Excel ini ke dalam Google Sheet secara pukal?")) {
-                    document.getElementById('statusText').innerText = "Menyimpan data pukal ke Google Sheet...";
-                    google.script.run
-                        .withSuccessHandler(() => {
-                            document.getElementById('statusText').innerText = "Semua data Excel berjaya disimpan ke Google Sheet!";
-                        })
-                        .syncAllBulk(rawData);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        });
-
-        function processDashboard() {
-            updateKPIs();
-            renderTable(document.getElementById('searchInput').value);
-            renderCharts();
+      const helpCounts = [
+        students.filter(s => s.rmt).length,
+        students.filter(s => s.bap).length,
+        students.filter(s => s.kwapm).length,
+        students.filter(s => s.asnaf).length,
+        students.filter(s => s.oku).length
+      ];
+      if (chartBantuanInstance) chartBantuanInstance.destroy();
+      chartBantuanInstance = new Chart($("chartBantuan"), {
+        type: "bar",
+        data: {
+          labels: ["RMT","BAP","KWAPM","Asnaf","OKU"],
+          datasets: [{
+            label: "Bilangan Murid",
+            data: helpCounts,
+            backgroundColor: ["#f59e0b","#10b981","#06b6d4","#f43f5e","#a855f7"],
+            borderRadius: 7,
+            maxBarThickness: 48
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+          plugins: { legend: { display: false } }
         }
+      });
+    }
 
-        function updateKPIs() {
-            let stats = {
-                total: rawData.length, lelaki: 0, perempuan: 0,
-                rmtL: 0, rmtP: 0, bap: 0, kwapm: 0, islam: 0, bukanIslam: 0,
-                asnaf: 0, oku: 0, bangsa: {}
-            };
+    function renderAnalysis() {
+      const filtered = getFilteredStudents();
+      updateKpis(filtered);
+      updateCharts(filtered);
+      $("emptyState").classList.toggle("hidden", filtered.length !== 0);
+    }
 
-            rawData.forEach(row => {
-                const jantina = String(row['JANTINA'] || '').toUpperCase().trim();
-                const bangsa = String(row['BANGSA'] || '').toUpperCase().trim() || 'LAIN-LAIN';
-                const agama = String(row['AGAMA'] || '').toUpperCase().trim();
-                
-                const isRMT = String(row['STATUS RMT'] || '').toUpperCase().trim() === 'YA';
-                const isBAP = String(row['STATUS BAP'] || '').toUpperCase().trim() === 'YA';
-                const isKWAPM = String(row['STATUS KWAPM'] || '').toUpperCase().trim() === 'YA';
-                const isAsnaf = String(row['ASNAF'] || '').toUpperCase().trim() === 'YA';
-                const isOKU = String(row['OKU'] || '').toUpperCase().trim() === 'YA';
+    async function loadStudents(forceRefresh = false) {
+      if (isLoading) return;
+      isLoading = true;
+      $("refreshBtn").disabled = true;
+      $("refreshBtn").classList.add("opacity-50");
+      setStatus(forceRefresh ? "Mengemas kini data..." : "Membaca data murid...");
 
-                if (jantina === 'LELAKI') stats.lelaki++;
-                if (jantina === 'PEREMPUAN') stats.perempuan++;
+      try {
+        // Satu bacaan koleksi bagi setiap sesi halaman. Semua filter dan carta
+        // menggunakan salinan data dalam memori; tiada query Firestore berulang.
+        const snapshot = await getDocs(collection(db, STUDENTS_COLLECTION));
+        allStudents = snapshot.docs
+          .map(normalizeStudent)
+          .filter(student => student.name || student.studentId || student.kelas);
 
-                stats.bangsa[bangsa] = (stats.bangsa[bangsa] || 0) + 1;
+        loadedAt = new Date();
+        populateFilters();
+        renderAnalysis();
+        setStatus(`Disambungkan · ${allStudents.length} rekod · ${loadedAt.toLocaleTimeString("ms-MY")}`, "online");
+      } catch (error) {
+        console.error("Ralat membaca Firestore students:", error);
+        setStatus("Gagal memuatkan data Firebase", "error");
+        $("emptyState").classList.remove("hidden");
+        $("emptyState").innerHTML = `
+          <i class="fa-solid fa-triangle-exclamation text-3xl text-rose-400"></i>
+          <p class="font-bold text-slate-700 mt-3">Data tidak dapat dimuatkan</p>
+          <p class="text-xs text-slate-500 mt-1">${escapeHtml(error.message || "Sila semak sambungan internet dan kebenaran Firestore.")}</p>
+          <button id="retryBtn" class="mt-4 rounded-lg bg-slate-800 text-white px-4 py-2 text-xs font-bold">Cuba Lagi</button>`;
+        $("retryBtn").addEventListener("click", () => loadStudents(true));
+      } finally {
+        isLoading = false;
+        $("refreshBtn").disabled = false;
+        $("refreshBtn").classList.remove("opacity-50");
+      }
+    }
 
-                if (agama === 'ISLAM') stats.islam++;
-                else if (agama !== '') stats.bukanIslam++;
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+      })[char]);
+    }
 
-                if (isRMT) {
-                    if (jantina === 'LELAKI') stats.rmtL++;
-                    if (jantina === 'PEREMPUAN') stats.rmtP++;
-                }
-                if (isBAP) stats.bap++;
-                if (isKWAPM) stats.kwapm++;
-                if (isAsnaf) stats.asnaf++;
-                if (isOKU) stats.oku++;
-            });
+    [
+      "filterTahun","filterKelas","filterJantina","filterBangsa","filterAgama",
+      "filterRMT","filterBAP","filterKWAPM","filterAsnaf","filterOKU"
+    ].forEach(id => $(id).addEventListener("change", renderAnalysis));
 
-            document.getElementById('kpiTotal').innerText = stats.total;
-            document.getElementById('kpiLelaki').innerText = `${stats.lelaki} L`;
-            document.getElementById('kpiPerempuan').innerText = `${stats.perempuan} P`;
-            document.getElementById('kpiRMT').innerText = stats.rmtL + stats.rmtP;
-            document.getElementById('kpiRMTL').innerText = `${stats.rmtL} L`;
-            document.getElementById('kpiRMTP').innerText = `${stats.rmtP} P`;
-            document.getElementById('kpiBAP').innerText = stats.bap;
-            document.getElementById('kpiKWAPM').innerText = stats.kwapm;
-            document.getElementById('kpiAsnaf').innerText = stats.asnaf;
-            document.getElementById('kpiOKU').innerText = stats.oku;
-            document.getElementById('kpiAgama').innerText = `Islam: ${stats.islam}`;
-            document.getElementById('kpiBukanIslam').innerText = `Bukan Islam: ${stats.bukanIslam}`;
+    $("resetFiltersBtn").addEventListener("click", () => {
+      [
+        "filterTahun","filterKelas","filterJantina","filterBangsa","filterAgama",
+        "filterRMT","filterBAP","filterKWAPM","filterAsnaf","filterOKU"
+      ].forEach(id => { $(id).value = ""; });
+      renderAnalysis();
+    });
 
-            let majoriti = "Tiada Data"; let maxVal = 0;
-            for (const [b, count] of Object.entries(stats.bangsa)) {
-                if (count > maxVal) { maxVal = count; majoriti = b; }
-            }
-            document.getElementById('kpiMajoriti').innerText = `${majoriti} (${maxVal})`;
-            
-            window.chartDataBangsa = stats.bangsa;
-            window.chartDataBantuan = [stats.rmtL + stats.rmtP, stats.bap, stats.kwapm, stats.asnaf, stats.oku];
-        }
-
-        function renderTable(searchTerm = "") {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
-
-            const filtered = rawData.filter(row => {
-                const name = String(row['NAMA MURID'] || '').toLowerCase();
-                return name.includes(searchTerm.toLowerCase());
-            });
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-slate-500">Tiada rekod dijumpai.</td></tr>`;
-                return;
-            }
-
-            filtered.forEach((row) => {
-                const realIndex = rawData.indexOf(row);
-                
-                const formatStatus = (val) => String(val).toUpperCase().trim() === 'YA' 
-                    ? '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-bold text-[10px]">YA</span>' 
-                    : '<span class="text-slate-300">-</span>';
-
-                const tr = document.createElement('tr');
-                tr.className = "border-b border-slate-100 hover:bg-slate-50";
-                tr.innerHTML = `
-                    <td class="px-4 py-2 font-bold text-slate-800">${row['NAMA MURID'] || ''}</td>
-                    <td class="px-4 py-2">${row['KELAS'] || ''}</td>
-                    <td class="px-4 py-2">${row['JANTINA'] || ''}</td>
-                    <td class="px-4 py-2">${row['BANGSA'] || ''}</td>
-                    <td class="px-4 py-2 text-center">${row['AGAMA'] || ''}</td>
-                    <td class="px-4 py-2 text-center">${formatStatus(row['STATUS RMT'])}</td>
-                    <td class="px-4 py-2 text-center">${formatStatus(row['OKU'])}</td>
-                    <td class="px-4 py-2 text-center">
-                        <button onclick="openEditModal(${realIndex})" class="text-blue-500 hover:bg-blue-50 px-2 py-1 rounded transition mr-1"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="deleteStudent(${realIndex})" class="text-red-500 hover:bg-red-50 px-2 py-1 rounded transition"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        document.getElementById('searchInput').addEventListener('input', (e) => renderTable(e.target.value));
-
-        function deleteStudent(index) {
-            const name = rawData[index]['NAMA MURID'];
-            if (confirm(`Adakah anda pasti untuk memadam murid:\n${name}?`)) {
-                rawData.splice(index, 1);
-                processDashboard();
-
-                google.script.run
-                    .withSuccessHandler(() => loadFromGoogleSheet())
-                    .deleteStudentBackend(name);
-            }
-        }
-
-        function openAddModal() {
-            document.getElementById('formMode').value = 'add';
-            document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-user-plus text-amber-500"></i> Tambah Murid Baharu';
-            document.getElementById('dataForm').reset();
-            document.getElementById('inputBangsa').value = 'MELAYU';
-            document.getElementById('dataModal').classList.remove('hidden');
-        }
-
-        function openEditModal(index) {
-            const row = rawData[index];
-            document.getElementById('formMode').value = 'edit';
-            document.getElementById('editIndex').value = index;
-            document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-user-pen text-blue-500"></i> Kemaskini Rekod Murid';
-            
-            document.getElementById('inputNama').value = row['NAMA MURID'] || '';
-            document.getElementById('inputKelas').value = row['KELAS'] || '';
-            document.getElementById('inputJantina').value = String(row['JANTINA'] || '').toUpperCase().trim();
-            document.getElementById('inputBangsa').value = row['BANGSA'] || '';
-            document.getElementById('inputAgama').value = String(row['AGAMA'] || '').toUpperCase().trim();
-            
-            document.getElementById('inputRMT').checked = String(row['STATUS RMT']).toUpperCase().trim() === 'YA';
-            document.getElementById('inputBAP').checked = String(row['STATUS BAP']).toUpperCase().trim() === 'YA';
-            document.getElementById('inputKWAPM').checked = String(row['STATUS KWAPM']).toUpperCase().trim() === 'YA';
-            document.getElementById('inputAsnaf').checked = String(row['ASNAF']).toUpperCase().trim() === 'YA';
-            document.getElementById('inputOKU').checked = String(row['OKU']).toUpperCase().trim() === 'YA';
-
-            document.getElementById('dataModal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('dataModal').classList.add('hidden');
-        }
-
-        document.getElementById('dataForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const mode = document.getElementById('formMode').value;
-
-            let studentData = {
-                'NAMA MURID': document.getElementById('inputNama').value.toUpperCase(),
-                'KELAS': document.getElementById('inputKelas').value.toUpperCase(),
-                'JANTINA': document.getElementById('inputJantina').value,
-                'BANGSA': document.getElementById('inputBangsa').value.toUpperCase(),
-                'AGAMA': document.getElementById('inputAgama').value,
-                'STATUS RMT': document.getElementById('inputRMT').checked ? 'YA' : 'TIDAK',
-                'STATUS BAP': document.getElementById('inputBAP').checked ? 'YA' : 'TIDAK',
-                'STATUS KWAPM': document.getElementById('inputKWAPM').checked ? 'YA' : 'TIDAK',
-                'ASNAF': document.getElementById('inputAsnaf').checked ? 'YA' : 'TIDAK',
-                'OKU': document.getElementById('inputOKU').checked ? 'YA' : 'TIDAK'
-            };
-
-            if (mode === 'add') {
-                rawData.unshift(studentData);
-                google.script.run
-                    .withSuccessHandler(() => loadFromGoogleSheet())
-                    .addStudentBackend(studentData);
-            } else if (mode === 'edit') {
-                const index = document.getElementById('editIndex').value;
-                rawData[index] = { ...rawData[index], ...studentData };
-                google.script.run
-                    .withSuccessHandler(() => loadFromGoogleSheet())
-                    .editStudentBackend(studentData);
-            }
-
-            closeModal();
-            processDashboard();
-        });
-
-        function renderCharts() {
-            const ctxBangsa = document.getElementById('chartBangsa').getContext('2d');
-            if (chartBangsaInstance) chartBangsaInstance.destroy();
-            
-            chartBangsaInstance = new Chart(ctxBangsa, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(window.chartDataBangsa),
-                    datasets: [{
-                        data: Object.values(window.chartDataBangsa),
-                        backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#0ea5e9', '#ec4899']
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
-            });
-
-            const ctxBantuan = document.getElementById('chartBantuan').getContext('2d');
-            if (chartBantuanInstance) chartBantuanInstance.destroy();
-
-            chartBantuanInstance = new Chart(ctxBantuan, {
-                type: 'bar',
-                data: {
-                    labels: ['RMT', 'BAP', 'KWAPM', 'Asnaf', 'OKU'],
-                    datasets: [{
-                        label: 'Bilangan Murid',
-                        data: window.chartDataBantuan,
-                        backgroundColor: ['#f59e0b', '#10b981', '#06b6d4', '#f43f5e', '#a855f7'],
-                        borderRadius: 4
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
-                    plugins: { legend: { display: false } }
-                }
-            });
-        }
-    </script>
+    $("refreshBtn").addEventListener("click", () => loadStudents(true));
+    loadStudents();
+  </script>
 </body>
 </html>
